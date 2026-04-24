@@ -1,0 +1,22 @@
+[project]
+name = "knowledge-gap-finder"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "bertopic>=0.17.4",
+    "faiss-cpu>=1.13.2",
+    "fastapi>=0.119.1",
+    "matplotlib>=3.10.7",
+    "numpy>=2.3.4",
+    "pandas>=2.3.3",
+    "plotly>=6.7.0",
+    "python-multipart>=0.0.20",
+    "rank-bm25>=0.2.2",
+    "requests>=2.32.5",
+    "sentence-transformers>=5.1.1",
+    "sqlite3-api>=2.0.4",
+    "streamlit>=1.50.0",
+    "uvicorn>=0.38.0",
+]

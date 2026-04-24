@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Knowledge Gap Finder</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --sidebar-w:220px;
+  --bg:#f4f6fb;
+  --sidebar-bg:#1a1d27;
+  --card:#ffffff;
+  --border:#e2e8f0;
+  --text:#111827;
+  --muted:#6b7280;
+  --accent:#5b5ef4;
+  --accent2:#0ea5e9;
+  --green:#10b981;
+}
+
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;}
+
+.sidebar{
+  width:var(--sidebar-w);background:var(--sidebar-bg);
+  display:flex;flex-direction:column;padding:1.25rem 0.85rem;
+  position:fixed;top:0;left:0;bottom:0;z-index:100;
+}
+
+.sidebar-logo{
+  padding:0.5rem 0.65rem 1.25rem;
+  border-bottom:1px solid #2a2d3a;
+  margin-bottom:1.25rem;
+}
+
+.sidebar-logo h1{
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:1rem;font-weight:800;color:#fff;
+}
+
+.sidebar-logo p{
+  font-size:0.65rem;color:#4b5563;
+  text-transform:uppercase;letter-spacing:0.08em;
+  margin-top:0.2rem;
+}
+
+.nav-label{
+  font-size:0.6rem;font-weight:700;
+  color:#374151;text-transform:uppercase;
+  letter-spacing:0.1em;padding:0 0.65rem;
+  margin-bottom:0.4rem;
+}
+
+.nav-item{
+  display:flex;align-items:center;gap:0.65rem;
+  padding:0.55rem 0.75rem;border-radius:7px;
+  color:#9ca3af;font-size:0.82rem;font-weight:500;
+  cursor:pointer;margin-bottom:2px;
+  transition:all 0.15s;border:none;background:none;
+  width:100%;text-align:left;
+}
+
+.nav-item:hover{background:#23263a;color:#e5e7eb;}
+
+.nav-item.active{
+  background:linear-gradient(135deg,rgba(91,94,244,0.25),rgba(14,165,233,0.1));
+  color:#fff;border:1px solid rgba(91,94,244,0.35);
+}
+
+.nav-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:#374151;flex-shrink:0;
+}
+
+.nav-item.active .nav-dot{background:var(--accent);}
+
+.sidebar-footer{
+  margin-top:auto;padding-top:1rem;
+  border-top:1px solid #2a2d3a;
+}
+
+.sidebar-footer p{font-size:0.62rem;color:#374151;line-height:1.7;}
+
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;}
+
+.topbar{
+  background:#fff;border-bottom:1px solid var(--border);
+  padding:0.9rem 2rem;display:flex;
+  align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:50;
+}
+
+.topbar-left{display:flex;align-items:center;gap:0.75rem;}
+
+.topbar-title{
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:0.95rem;font-weight:700;
+}
+
+.topbar-sep{color:#d1d5db;font-size:0.9rem;}
+
+.topbar-page{font-size:0.82rem;color:var(--muted);font-weight:500;}
+
+.status-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--green);display:inline-block;
+}
+
+.status-text{font-size:0.72rem;color:var(--muted);}
+
+.content{padding:1.75rem 2rem;}
+
+.page-section{display:none;}
+.page-section.active{display:block;}
+
+.search-card{
+  background:#fff;border-radius:14px;
+  padding:1.5rem 1.75rem;border:1px solid var(--border);
+  margin-bottom:1.5rem;
+  box-shadow:0 1px 3px rgba(0,0,0,0.05);
+}
+
+.search-card h2{
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:1.05rem;font-weight:700;margin-bottom:0.25rem;
+}
+
+.search-card p{font-size:0.8rem;color:var(--muted);margin-bottom:1.25rem;}
+
+.search-row{display:flex;gap:0.75rem;flex-wrap:wrap;}
+
+.search-input{
+  flex:1;min-width:240px;
+  padding:0.72rem 1rem;
+  border:1.5px solid var(--border);border-radius:9px;
+  font-family:'Inter',sans-serif;font-size:0.88rem;
+  color:var(--text);background:#f9fafb;outline:none;
+  transition:border-color 0.2s,box-shadow 0.2s;
+}
+
+.search-input:focus{
+  border-color:var(--accent);background:#fff;
+  box-shadow:0 0 0 3px rgba(91,94,244,0.1);
+}
+
+.search-input::placeholder{color:#9ca3af;}
+
+.btn-primary{
+  background:var(--accent);color:#fff;border:none;
+  border-radius:9px;padding:0.72rem 1.4rem;
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:0.82rem;font-weight:700;cursor:pointer;
+  transition:opacity 0.2s,transform 0.1s;white-space:nowrap;
+}
+
+.btn-primary:hover{opacity:0.88;}
+.btn-primary:active{transform:scale(0.98);}
+.btn-primary:disabled{opacity:0.45;cursor:not-allowed;}
+
+.options-row{
+  display:flex;gap:1.25rem;flex-wrap:wrap;
+  align-items:center;margin-top:0.85rem;
+  padding-top:0.85rem;border-top:1px solid var(--border);
+}
+
+.opt-group{display:flex;align-items:center;gap:0.5rem;}
+
+.opt-group label{font-size:0.75rem;font-weight:500;color:var(--muted);}
+
+.opt-group input[type="number"]{
+  width:64px;padding:0.32rem 0.5rem;
+  border:1.5px solid var(--border);border-radius:7px;
+  font-size:0.8rem;color:var(--text);
+  background:#f9fafb;outline:none;
+}
+
+.opt-group input[type="number"]:focus{border-color:var(--accent);}
+
+.refresh-label{
+  display:flex;align-items:center;gap:0.4rem;
+  font-size:0.75rem;font-weight:500;color:var(--muted);
+  cursor:pointer;user-select:none;
+}
+
+.refresh-label input{accent-color:var(--accent);cursor:pointer;}
+
+.loader{
+  display:none;background:#fff;border-radius:14px;
+  padding:1.25rem 1.75rem;border:1px solid var(--border);
+  margin-bottom:1.5rem;
+}
+
+.loader.active{display:block;}
+
+.loader-top{display:flex;align-items:center;gap:0.75rem;margin-bottom:0.85rem;}
+
+.spinner{
+  width:16px;height:16px;
+  border:2px solid #e2e8f0;border-top-color:var(--accent);
+  border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0;
+}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.loader-text{font-size:0.85rem;font-weight:600;}
+.loader-sub{font-size:0.73rem;color:var(--muted);}
+
+.steps-row{display:flex;gap:0.4rem;flex-wrap:wrap;}
+
+.step{
+  font-size:0.67rem;font-weight:600;
+  padding:0.28rem 0.65rem;border-radius:999px;
+  background:#f1f5f9;color:#94a3b8;
+  border:1.5px solid #e2e8f0;transition:all 0.25s;
+}
+
+.step.active{background:var(--accent);color:#fff;border-color:transparent;}
+.step.done{background:#dcfce7;color:#15803d;border-color:#bbf7d0;}
+
+.stats-grid{
+  display:grid;grid-template-columns:repeat(5,1fr);
+  gap:1rem;margin-bottom:1.5rem;
+}
+
+@media(max-width:900px){.stats-grid{grid-template-columns:repeat(3,1fr);}}
+
+.stat-card{
+  background:#fff;border-radius:12px;
+  padding:1.1rem 1.25rem;border:1px solid var(--border);
+  box-shadow:0 1px 3px rgba(0,0,0,0.04);
+  animation:fadeUp 0.3s ease both;
+}
+
+.stat-value{
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:1.55rem;font-weight:800;
+  color:var(--text);line-height:1;margin-bottom:0.3rem;
+}
+
+.stat-label{font-size:0.7rem;font-weight:500;color:var(--muted);}
+
+.section-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:1rem;
+}
+
+.section-title{
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:0.95rem;font-weight:700;
+}
+
+.section-badge{
+  font-size:0.7rem;font-weight:600;
+  padding:0.2rem 0.6rem;border-radius:999px;
+  background:#f1f5f9;color:var(--muted);
+}
+
+.gaps-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+  gap:1rem;margin-bottom:1.5rem;
+}
+
+.gap-card{
+  background:#fff;border-radius:13px;
+  border:1px solid var(--border);overflow:hidden;
+  box-shadow:0 1px 3px rgba(0,0,0,0.04);
+  transition:transform 0.2s,box-shadow 0.2s;
+  animation:fadeUp 0.4s ease both;
+}
+
+.gap-card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 6px 20px rgba(0,0,0,0.08);
+}
+
+.gap-card-top{
+  padding:1.1rem 1.25rem 0.85rem;
+  border-left:4px solid transparent;
+}
+
+.rank-1 .gap-card-top{border-left-color:#f59e0b;}
+.rank-2 .gap-card-top{border-left-color:#8b5cf6;}
+.rank-3 .gap-card-top{border-left-color:#0ea5e9;}
+.rank-other .gap-card-top{border-left-color:#d1d5db;}
+
+.gap-rank-label{
+  font-size:0.65rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:0.08em;
+  color:var(--muted);margin-bottom:0.5rem;
+}
+
+.gap-score-row{display:flex;align-items:baseline;gap:0.35rem;margin-bottom:0.4rem;}
+
+.gap-score-num{
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:1.9rem;font-weight:800;line-height:1;
+}
+
+.rank-1 .gap-score-num{color:#f59e0b;}
+.rank-2 .gap-score-num{color:#8b5cf6;}
+.rank-3 .gap-score-num{color:#0ea5e9;}
+.rank-other .gap-score-num{color:#64748b;}
+
+.gap-score-sub{font-size:0.7rem;color:var(--muted);font-weight:500;}
+
+.gap-topic{
+  font-size:0.77rem;font-weight:600;
+  color:var(--accent);word-break:break-word;
+}
+
+.gap-divider{height:1px;background:var(--border);}
+
+.gap-card-body{padding:0.9rem 1.25rem;}
+
+.gap-summary{
+  font-size:0.79rem;color:#374151;
+  line-height:1.6;margin-bottom:0.55rem;
+}
+
+.gap-why{
+  font-size:0.74rem;color:var(--muted);
+  line-height:1.55;font-style:italic;
+  margin-bottom:0.8rem;
+  padding-left:0.6rem;border-left:2px solid #e2e8f0;
+}
+
+.gap-chips{display:flex;gap:0.3rem;flex-wrap:wrap;margin-bottom:0.8rem;}
+
+.chip{
+  font-size:0.64rem;font-weight:600;
+  padding:0.18rem 0.5rem;border-radius:999px;
+  background:#f8fafc;border:1px solid #e2e8f0;color:#475569;
+}
+
+.gap-papers-label{
+  font-size:0.63rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:0.08em;
+  color:var(--muted);margin-bottom:0.35rem;
+}
+
+.gap-papers-list{list-style:none;}
+
+.gap-papers-list li{
+  font-size:0.74rem;color:#374151;
+  padding:0.18rem 0 0.18rem 0.9rem;
+  position:relative;line-height:1.4;
+}
+
+.gap-papers-list li::before{
+  content:'–';position:absolute;left:0;color:var(--accent);
+}
+
+.two-col{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:1rem;margin-bottom:1.5rem;
+}
+
+@media(max-width:800px){.two-col{grid-template-columns:1fr;}}
+
+.info-card{
+  background:#fff;border-radius:13px;
+  border:1px solid var(--border);padding:1.25rem;
+  box-shadow:0 1px 3px rgba(0,0,0,0.04);
+}
+
+.metric-row{
+  display:flex;align-items:center;
+  justify-content:space-between;
+  padding:0.55rem 0.8rem;background:#f8fafc;
+  border-radius:8px;margin-bottom:0.45rem;
+  animation:fadeUp 0.3s ease both;
+}
+
+.metric-name{font-size:0.78rem;font-weight:500;color:#374151;}
+
+.metric-val{
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:0.92rem;font-weight:700;color:var(--accent);
+}
+
+.retrieved-item{
+  display:flex;align-items:flex-start;gap:0.7rem;
+  padding:0.6rem 0.8rem;background:#f8fafc;
+  border-radius:8px;margin-bottom:0.4rem;
+  transition:background 0.15s;
+  animation:fadeUp 0.3s ease both;
+}
+
+.retrieved-item:hover{background:#f1f5f9;}
+
+.rrf-score{
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:0.68rem;font-weight:700;color:#fff;
+  background:var(--accent);
+  padding:0.18rem 0.42rem;border-radius:5px;
+  white-space:nowrap;flex-shrink:0;margin-top:1px;
+}
+
+.retrieved-title{font-size:0.77rem;color:#374151;line-height:1.4;}
+
+.clusters-info{
+  background:#fff;border-radius:13px;
+  border:1px solid var(--border);padding:1.5rem;
+  box-shadow:0 1px 3px rgba(0,0,0,0.04);
+}
+
+.cluster-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0.7rem 0;border-bottom:1px solid var(--border);
+}
+
+.cluster-row:last-child{border-bottom:none;}
+
+.cluster-label{font-size:0.82rem;font-weight:500;color:var(--text);}
+.cluster-meta{font-size:0.75rem;color:var(--muted);}
+.cluster-score{
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:0.88rem;font-weight:700;color:var(--accent);
+}
+
+.analytics-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:1rem;margin-bottom:1.5rem;
+}
+
+.analytics-card{
+  background:#fff;border-radius:13px;
+  border:1px solid var(--border);padding:1.25rem;
+  box-shadow:0 1px 3px rgba(0,0,0,0.04);
+}
+
+.analytics-card h3{
+  font-size:0.82rem;font-weight:600;
+  color:var(--muted);margin-bottom:0.75rem;
+  text-transform:uppercase;letter-spacing:0.06em;
+}
+
+.bar-row{
+  display:flex;align-items:center;gap:0.6rem;
+  margin-bottom:0.5rem;
+}
+
+.bar-label{font-size:0.73rem;color:var(--text);width:80px;flex-shrink:0;}
+
+.bar-track{
+  flex:1;height:7px;background:#f1f5f9;
+  border-radius:999px;overflow:hidden;
+}
+
+.bar-fill{
+  height:100%;border-radius:999px;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  transition:width 0.6s ease;
+}
+
+.bar-val{font-size:0.7rem;font-weight:600;color:var(--muted);width:35px;text-align:right;}
+
+.empty-state{
+  text-align:center;padding:3rem;
+  color:var(--muted);font-size:0.85rem;
+}
+
+.error-box{
+  display:none;padding:1rem 1.25rem;
+  background:#fef2f2;border:1px solid #fecaca;
+  border-radius:10px;color:#dc2626;
+  font-size:0.82rem;margin-bottom:1rem;
+}
+
+.error-box.active{display:block;}
+
+.results{display:none;}
+.results.active{display:block;}
+
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(10px);}
+  to{opacity:1;transform:translateY(0);}
+}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <h1>Knowledge Gap Finder</h1>
+    <p>Research Discovery System</p>
+  </div>
+
+  <nav>
+    <div class="nav-label">Menu</div>
+    <button class="nav-item active" onclick="showPage('dashboard')">
+      <span class="nav-dot"></span> Dashboard
+    </button>
+    <button class="nav-item" onclick="showPage('clusters')">
+      <span class="nav-dot"></span> Clusters
+    </button>
+    <button class="nav-item" onclick="showPage('analytics')">
+      <span class="nav-dot"></span> Analytics
+    </button>
+    <button class="nav-item" onclick="showPage('retrieved')">
+      <span class="nav-dot"></span> Retrieved Papers
+    </button>
+  </nav>
+
+  <div class="sidebar-footer">
+    <p>Semantic Scholar + ArXiv<br/>BM25 · FAISS · KMeans<br/>SentenceTransformers</p>
+  </div>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-title">Knowledge Gap Finder</div>
+      <span class="topbar-sep">|</span>
+      <span class="topbar-page" id="currentPageLabel">Dashboard</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:0.5rem;">
+      <span class="status-dot"></span>
+      <span class="status-text">System Ready</span>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- DASHBOARD PAGE -->
+    <div class="page-section active" id="page-dashboard">
+
+      <div class="search-card">
+        <h2>Discover Research Gaps</h2>
+        <p>Enter any research topic to identify under-explored areas using semantic clustering and gap scoring.</p>
+        <div class="search-row">
+          <input id="queryInput" class="search-input" type="text"
+            placeholder="e.g. federated learning privacy, transformer models..."
+            autocomplete="off"/>
+          <button class="btn-primary" id="searchBtn" onclick="runSearch()">Discover Gaps</button>
+        </div>
+        <div class="options-row">
+          <div class="opt-group">
+            <label>Papers to fetch</label>
+            <input type="number" id="limitInput" value="100" min="10" max="200"/>
+          </div>
+          <div class="opt-group">
+            <label>Top K results</label>
+            <input type="number" id="topkInput" value="10" min="5" max="20"/>
+          </div>
+          <label class="refresh-label">
+            <input type="checkbox" id="forceRefresh"/> Force Refresh Cache
+          </label>
+        </div>
+      </div>
+
+      <div class="loader" id="loader">
+        <div class="loader-top">
+          <div class="spinner"></div>
+          <div>
+            <div class="loader-text">Running pipeline...</div>
+            <div class="loader-sub">Fetching, embedding, clustering and scoring papers</div>
+          </div>
+        </div>
+        <div class="steps-row">
+          <div class="step" id="s1">Fetch</div>
+          <div class="step" id="s2">Embed</div>
+          <div class="step" id="s3">Index</div>
+          <div class="step" id="s4">Retrieve</div>
+          <div class="step" id="s5">Cluster</div>
+          <div class="step" id="s6">Score</div>
+          <div class="step" id="s7">Explain</div>
+        </div>
+      </div>
+
+      <div class="error-box" id="errorBox"></div>
+
+      <div class="results" id="results">
+        <div class="stats-grid" id="statsGrid"></div>
+        <div class="section-header">
+          <div class="section-title">Knowledge Gaps Discovered</div>
+          <div class="section-badge" id="gapCount"></div>
+        </div>
+        <div class="gaps-grid" id="gapsGrid"></div>
+      </div>
+
+    </div>
+
+    <!-- CLUSTERS PAGE -->
+    <div class="page-section" id="page-clusters">
+      <div class="section-header" style="margin-bottom:1rem">
+        <div class="section-title">Cluster Overview</div>
+      </div>
+      <div class="clusters-info" id="clustersTable">
+        <div class="empty-state">Run a search on the Dashboard first to see cluster data.</div>
+      </div>
+    </div>
+
+    <!-- ANALYTICS PAGE -->
+    <div class="page-section" id="page-analytics">
+      <div class="section-header" style="margin-bottom:1rem">
+        <div class="section-title">Evaluation Metrics</div>
+      </div>
+      <div class="analytics-grid" id="analyticsGrid">
+        <div class="analytics-card">
+          <div class="empty-state">Run a search first.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RETRIEVED PAPERS PAGE -->
+    <div class="page-section" id="page-retrieved">
+      <div class="section-header" style="margin-bottom:1rem">
+        <div class="section-title">Top Retrieved Papers</div>
+      </div>
+      <div class="info-card" id="retrievedFull">
+        <div class="empty-state">Run a search on the Dashboard first.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const STEPS = ['s1','s2','s3','s4','s5','s6','s7'];
+let stepTimer = null;
+let lastResults = null;
+
+function showPage(page){
+  document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  event.currentTarget.classList.add('active');
+  const labels = {dashboard:'Dashboard',clusters:'Clusters',analytics:'Analytics',retrieved:'Retrieved Papers'};
+  document.getElementById('currentPageLabel').textContent = labels[page];
+}
+
+function animateSteps(){
+  let i = 0;
+  STEPS.forEach(s => document.getElementById(s).className = 'step');
+  stepTimer = setInterval(() => {
+    if(i > 0) document.getElementById(STEPS[i-1]).className = 'step done';
+    if(i < STEPS.length){ document.getElementById(STEPS[i]).className = 'step active'; i++; }
+  }, 900);
+}
+
+function stopSteps(){
+  clearInterval(stepTimer);
+  STEPS.forEach(s => document.getElementById(s).className = 'step done');
+}
+
+function rankClass(i){
+  if(i===0) return 'rank-1';
+  if(i===1) return 'rank-2';
+  if(i===2) return 'rank-3';
+  return 'rank-other';
+}
+
+function renderStats(data){
+  const m = data.metrics || {};
+  const items = [
+    {val:data.total_papers, label:'Papers Indexed'},
+    {val:data.gaps.length, label:'Gaps Found'},
+    {val:m.mean_gap_score ?? '—', label:'Mean Gap Score'},
+    {val:m.std_gap_score ?? '—', label:'Score Std Dev'},
+    {val:data.retrieved.length, label:'Retrieved Papers'},
+  ];
+  document.getElementById('statsGrid').innerHTML = items.map((it,i) => `
+    <div class="stat-card" style="animation-delay:${i*0.06}s">
+      <div class="stat-value">${it.val}</div>
+      <div class="stat-label">${it.label}</div>
+    </div>
+  `).join('');
+}
+
+function renderGaps(gaps){
+  document.getElementById('gapCount').textContent = gaps.length + ' gaps';
+  document.getElementById('gapsGrid').innerHTML = gaps.map((g,i) => `
+    <div class="gap-card ${rankClass(i)}" style="animation-delay:${i*0.07}s">
+      <div class="gap-card-top">
+        <div class="gap-rank-label">Gap #${i+1}</div>
+        <div class="gap-score-row">
+          <div class="gap-score-num">${g.gap_score}</div>
+          <div class="gap-score-sub">gap score</div>
+        </div>
+        <div class="gap-topic">${g.label}</div>
+      </div>
+      <div class="gap-divider"></div>
+      <div class="gap-card-body">
+        <div class="gap-summary">${g.summary}</div>
+        <div class="gap-why">${g.why_gap}</div>
+        <div class="gap-chips">
+          <div class="chip">${g.stats.paper_count} papers</div>
+          <div class="chip">trend ${g.stats.trend}</div>
+          <div class="chip">cit ${g.stats.avg_citations}</div>
+          <div class="chip">${g.stats.latest_year}</div>
+        </div>
+        ${g.top_papers.length ? `
+          <div class="gap-papers-label">Key Papers</div>
+          <ul class="gap-papers-list">
+            ${g.top_papers.map(t => `<li>${t}</li>`).join('')}
+          </ul>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderClusters(gaps){
+  document.getElementById('clustersTable').innerHTML = `
+    <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:0.5rem;padding:0.5rem 0.8rem;font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;border-bottom:1px solid var(--border);">
+      <div>Topic Keywords</div><div>Papers</div><div>Trend</div><div>Gap Score</div>
+    </div>
+    ${gaps.map((g,i) => `
+      <div class="cluster-row">
+        <div class="cluster-label">${g.label}</div>
+        <div class="cluster-meta">${g.stats.paper_count} papers</div>
+        <div class="cluster-meta">${g.stats.trend}</div>
+        <div class="cluster-score">${g.gap_score}</div>
+      </div>
+    `).join('')}
+  `;
+}
+
+function renderAnalytics(metrics, gaps){
+  const metricCards = Object.entries(metrics).map(([k,v]) => `
+    <div class="metric-row">
+      <div class="metric-name">${k.replace(/_/g,' ')}</div>
+      <div class="metric-val">${v}</div>
+    </div>
+  `).join('');
+
+  const maxScore = Math.max(...gaps.map(g => g.gap_score));
+  const barRows = gaps.map((g,i) => `
+    <div class="bar-row">
+      <div class="bar-label">Gap #${i+1}</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${(g.gap_score/maxScore*100).toFixed(0)}%"></div>
+      </div>
+      <div class="bar-val">${g.gap_score}</div>
+    </div>
+  `).join('');
+
+  const paperCounts = gaps.map((g,i) => `
+    <div class="bar-row">
+      <div class="bar-label">Gap #${i+1}</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${(g.stats.paper_count/Math.max(...gaps.map(x=>x.stats.paper_count))*100).toFixed(0)}%"></div>
+      </div>
+      <div class="bar-val">${g.stats.paper_count}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('analyticsGrid').innerHTML = `
+    <div class="analytics-card">
+      <h3>System Metrics</h3>
+      ${metricCards}
+    </div>
+    <div class="analytics-card">
+      <h3>Gap Score by Cluster</h3>
+      ${barRows}
+    </div>
+    <div class="analytics-card">
+      <h3>Paper Count by Cluster</h3>
+      ${paperCounts}
+    </div>
+  `;
+}
+
+function renderRetrievedFull(papers){
+  document.getElementById('retrievedFull').innerHTML = papers.map((p,i) => `
+    <div class="retrieved-item" style="animation-delay:${i*0.04}s">
+      <div class="rrf-score">${p.rrf_score}</div>
+      <div class="retrieved-title">${p.title}</div>
+    </div>
+  `).join('');
+}
+
+async function runSearch(){
+  const query = document.getElementById('queryInput').value.trim();
+  if(!query){ document.getElementById('queryInput').focus(); return; }
+
+  const limit = parseInt(document.getElementById('limitInput').value) || 100;
+  const top_k = parseInt(document.getElementById('topkInput').value) || 10;
+  const force_refresh = document.getElementById('forceRefresh').checked;
+
+  document.getElementById('searchBtn').disabled = true;
+  document.getElementById('loader').classList.add('active');
+  document.getElementById('results').classList.remove('active');
+  document.getElementById('errorBox').classList.remove('active');
+  animateSteps();
+
+  try{
+    const resp = await fetch('/search',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({query,limit,top_k,force_refresh})
+    });
+    const data = await resp.json();
+    stopSteps();
+
+    if(data.error){
+      document.getElementById('errorBox').textContent = data.error;
+      document.getElementById('errorBox').classList.add('active');
+    } else {
+      lastResults = data;
+      renderStats(data);
+      renderGaps(data.gaps);
+      renderClusters(data.gaps);
+      renderAnalytics(data.metrics, data.gaps);
+      renderRetrievedFull(data.retrieved);
+      document.getElementById('results').classList.add('active');
+      document.getElementById('results').scrollIntoView({behavior:'smooth'});
+    }
+  } catch(err){
+    stopSteps();
+    document.getElementById('errorBox').textContent = `Connection error: ${err.message}`;
+    document.getElementById('errorBox').classList.add('active');
+  }
+
+  document.getElementById('loader').classList.remove('active');
+  document.getElementById('searchBtn').disabled = false;
+}
+
+document.getElementById('queryInput').addEventListener('keydown', e => {
+  if(e.key === 'Enter') runSearch();
+});
+</script>
+</body>
+</html>
